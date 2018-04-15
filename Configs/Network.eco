@@ -1,0 +1,11 @@
+{
+  "PublicServer": true,
+  "Password": "",
+  "Description": "<color=#ee33ee>Arcadia</color> | <color=#1133ff>Parliamentary Democracy</color> <color=#ffdd00>2km</color> <color=#ff0000>60d</color> | https://discord.gg/Xj9VBQA",
+  "IPAddress": "Any",
+  "GameServerPort": 3000,
+  "WebServerPort": 3001,
+  "DetectNAT": true,
+  "Rate": 10,
+  "ServerBrowserService": "https://ecoauth.strangeloopgames.com/game"
+}
