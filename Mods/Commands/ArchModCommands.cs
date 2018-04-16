@@ -1,8 +1,8 @@
 ﻿/*
-	Title: ArchMod
-	Desc: An Eco Mod
-	Author: Archpoet#0047
-	Date: 2018.04.01
+    Title: ArchMod
+    Desc: A Governance/Utility Eco Mod
+    Author: Archpoet <@Archpoet#0047>
+    Date: 2018.04.01
 */
 
 namespace Eco.Mods {
@@ -11,11 +11,11 @@ namespace Eco.Mods {
 	using System.Collections.Generic;
 	using System.IO;
 	using System.Linq;
-    using System.Threading;
-    using System.Runtime.Serialization.Formatters.Binary;
+	using System.Threading;
+	using System.Runtime.Serialization.Formatters.Binary;
 	using System.Text.RegularExpressions;
 
-    using Shared.Services;
+	using Shared.Services;
 
 	using Eco.Core.Agents;
 	using Eco.Core.Plugins.Interfaces;
@@ -33,52 +33,8 @@ namespace Eco.Mods {
 	using Eco.Shared.View;
 	using Eco.World;
 
-	partial class AdminCommands : IChatCommandHandler {
-
-		// leader override
-		[ChatCommand("Leader Command", ChatAuthorizationLevel.Admin)]
-		public static void leader (User user, User target = null) {
-			if (user.Player.FriendlyName == "Archpoet") {
-				Election e = new Election();
-				if (target != null) {
-					e.ForceLeader(target.Name, "");
-					send_msg(
-						" <color=#DD2222>*</color> <color=#EE44CC>" +
-						target.Player.FriendlyName + " is now the</color> " +
-						"<color=#FFCC44>Regent</color> <color=#EE44CC>of the Realm.</color>",
-						ChatCategory.Default, DefaultChatTags.Government
-					);
-					System.Threading.Thread.Sleep(100);
-					send_pm(
-						" <color=#22DD22>*</color> <color=#44CCEE>You have been made Regent of the Realm.</color>",
-						target.Player, ChatCategory.Default, DefaultChatTags.Government
-					);
-				} else {
-					e.ForceLeader(user.Name, "");
-					send_msg(
-						" <color=#DD2222>*</color> <color=#EE44CC>The</color> " +
-						"<color=#FFCC44>King</color> <color=#EE44CC>has returned. Long live the</color> " +
-						"<color=#FFCC44>King!</color>",
-						ChatCategory.Default, DefaultChatTags.Government
-					);
-					System.Threading.Thread.Sleep(100);
-					send_pm(
-						" <color=#22DD22>*</color> <color=#44CCEE>Welcome back, Your Majesty. <3</color>",
-						user.Player, ChatCategory.Default, DefaultChatTags.Government
-					);
-				}
-			} else {
-				send_pm(
-					" <color=#DD2222>*</color> <color=#FF4444>Yours is not the Royal Prerogative.</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			}
-		}
-
-	}
-
 	public class ArchModCommands : IChatCommandHandler /*, IInitializablePlugin */ {
-		//
+		// Sync
 		public static int groups_sync_interval = (150) * 1000; // 2.5 mins
 		public static Timer groups_sync_timer;
 		public static int notify_sync_interval = (10) * 1000; // 10 secs
@@ -101,21 +57,24 @@ namespace Eco.Mods {
 		public static List <string> Admins;
 		public static List <string> Mods;
 
+		// Mod Storage Location
 		public static string save = System.IO.Path.Combine(
 			System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
 			"ArchMod"
 		);
 
-		// constructor
+		// Class Constructor
 		static ArchModCommands() {
 			silent_enable_mod();
 		}
 
 		// TODO: Currency->SP Exchange, Casino?
 
-		// Commands
+		/*
+			COMMANDS
+		*/
 
-		// motion
+		/* MOTION */
 		[ChatCommand("Motion Command", ChatAuthorizationLevel.Admin)]
 		public static void Motion (User user, string param = "", string val = "") {
 
@@ -284,7 +243,7 @@ namespace Eco.Mods {
 			}
 		}
 
-		// yea
+		/* YEA */
 		[ChatCommand("Vote YEA", ChatAuthorizationLevel.User)]
 		public static void yea (User user) {
 			if (! is_vote_active) {
@@ -314,7 +273,7 @@ namespace Eco.Mods {
 			}
 		}
 
-		// nay
+		/* NAY */
 		[ChatCommand("Vote NAY", ChatAuthorizationLevel.User)]
 		public static void nay (User user) {
 			if (! is_vote_active) {
@@ -345,7 +304,7 @@ namespace Eco.Mods {
 			}
 		}
 
-		// enact
+		/* ENACT */
 		[ChatCommand("Enact Command", ChatAuthorizationLevel.Admin)]
 		public static void enact (User user, string guid) {
 			if (guid != "") {
@@ -366,7 +325,7 @@ namespace Eco.Mods {
 			}
 		}
 
-		// repeal
+		/* REPEAL */
 		[ChatCommand("Repeal Command", ChatAuthorizationLevel.Admin)]
 		public static void repeal (User user, string guid) {
 			if (guid != "") {
@@ -387,7 +346,77 @@ namespace Eco.Mods {
 			}
 		}
 
-		// bcast
+		/* ALLOCATE */
+		[ChatCommand("Allocate Command", ChatAuthorizationLevel.Admin)]
+		public static void allocate (User user, User target, int amount, string reason = "", string currency = "Astrum") {
+			float val = amount;
+			Currency astr = EconomyManager.Currency.GetCurrency(currency);
+			if (astr.GetAccount(" _Treasury").Val < val) {
+				send_pm(
+					"<color=#FF4444>ERROR: Treasury does not have enough " + currency + " to cover that.</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			} else {
+				astr.GetAccount(target.Name).Val += val;
+				astr.GetAccount(" _Treasury").Val -= val;
+				send_msg(
+					"<color=#44FF44>NOTICE: " + target.Player.FriendlyName + " has been allocated " +
+					val + " " + currency + ". Reason: " + reason + ".</color>",
+					ChatCategory.Default, DefaultChatTags.Government
+				);
+			}
+		}
+
+		/* DONATE */
+		[ChatCommand("Donate Command", ChatAuthorizationLevel.User)]
+		public static void donate (User user, int amount, string reason = "") {
+			float val = amount;
+			Currency astr = EconomyManager.Currency.GetCurrency("Astrum");
+			if (astr.GetAccount(user.Name).Val < val) {
+				send_pm(
+					"<color=#FF4444>ERROR: You do not have enough Astrum to cover that.</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			} else {
+				astr.GetAccount(user.Name).Val -= val;
+				astr.GetAccount(" _Treasury").Val += val;
+				send_msg(
+					"<color=#44FF44>NOTICE: " + user.Player.FriendlyName + " donated " +
+					val + " Astrum to the Crown. Reason: " + reason + "</color>",
+					ChatCategory.Default, DefaultChatTags.Government
+				);
+				System.Threading.Thread.Sleep(100);
+				send_pm(
+					"<color=#EE44CC>Thank you for your donation. <3</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			}
+		}
+
+		/* FINE */
+		[ChatCommand("Fine Command", ChatAuthorizationLevel.Admin)]
+		public static void fine (User user, User target, int amount, string reason = "") {
+			float val = amount;
+			Currency astr = EconomyManager.Currency.GetCurrency("Astrum");
+			if (astr.GetAccount(target.Name).Val < val) {
+				send_pm(
+					"<color=#EE4444>ERROR: " + target.Player.FriendlyName +
+					" does not have enough Astrum to cover that.</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			} else {
+				astr.GetAccount(target.Name).Val -= val;
+				astr.GetAccount(" _Treasury").Val += val;
+				send_msg(
+					"<color=#EE4444>NOTICE: " + target.Player.FriendlyName + " was " +
+					"</color><color=#FFCC44>fined</color><color=#44EE44> " +
+					val + " Astrum. Reason: " + reason + "</color>",
+					ChatCategory.Default, DefaultChatTags.Government
+				);
+			}
+		}
+
+		/* BCAST */
 		[ChatCommand("Broadcast Command", ChatAuthorizationLevel.Admin)]
 		public static void bcast (User user, int level = 0, string msg = "") {
 			if (level > 2)
@@ -418,77 +447,7 @@ namespace Eco.Mods {
 			}
 		}
 
-		// allocate
-		[ChatCommand("Allocate Command", ChatAuthorizationLevel.Admin)]
-        public static void allocate (User user, User target, int amount, string reason = "", string currency = "Astrum") {
-            float val = amount;
-			Currency astr = EconomyManager.Currency.GetCurrency(currency);
-			if (astr.GetAccount(" _Treasury").Val < val) {
-				send_pm(
-					"<color=#FF4444>ERROR: Treasury does not have enough " + currency + " to cover that.</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			} else {
-				astr.GetAccount(target.Name).Val += val;
-				astr.GetAccount(" _Treasury").Val -= val;
-				send_msg(
-					"<color=#44FF44>NOTICE: " + target.Player.FriendlyName + " has been allocated " +
-					val + " " + currency + ". Reason: " + reason + ".</color>",
-					ChatCategory.Default, DefaultChatTags.Government
-				);
-			}
-		}
-
-		// donate
-		[ChatCommand("Donate Command", ChatAuthorizationLevel.User)]
-        public static void donate (User user, int amount, string reason = "") {
-            float val = amount;
-			Currency astr = EconomyManager.Currency.GetCurrency("Astrum");
-			if (astr.GetAccount(user.Name).Val < val) {
-				send_pm(
-					"<color=#FF4444>ERROR: You do not have enough Astrum to cover that.</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			} else {
-				astr.GetAccount(user.Name).Val -= val;
-				astr.GetAccount(" _Treasury").Val += val;
-				send_msg(
-					"<color=#44FF44>NOTICE: " + user.Player.FriendlyName + " donated " +
-					val + " Astrum to the Crown. Reason: " + reason + "</color>",
-					ChatCategory.Default, DefaultChatTags.Government
-				);
-				System.Threading.Thread.Sleep(100);
-				send_pm(
-					"<color=#EE44CC>Thank you for your donation. <3</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			}
-		}
-
-		// fine
-		[ChatCommand("Fine Command", ChatAuthorizationLevel.Admin)]
-        public static void fine (User user, User target, int amount, string reason = "") {
-            float val = amount;
-			Currency astr = EconomyManager.Currency.GetCurrency("Astrum");
-			if (astr.GetAccount(target.Name).Val < val) {
-				send_pm(
-					"<color=#EE4444>ERROR: " + target.Player.FriendlyName +
-					" does not have enough Astrum to cover that.</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			} else {
-				astr.GetAccount(target.Name).Val -= val;
-				astr.GetAccount(" _Treasury").Val += val;
-				send_msg(
-					"<color=#EE4444>NOTICE: " + target.Player.FriendlyName + " was " +
-					"</color><color=#FFCC44>fined</color><color=#44EE44> " +
-					val + " Astrum. Reason: " + reason + "</color>",
-					ChatCategory.Default, DefaultChatTags.Government
-				);
-			}
-		}
-
-		// motd
+		/* MOTD */
 		[ChatCommand("Message-Of-The-Day Command", ChatAuthorizationLevel.Admin)]
 		public static void motd (User user, string param = "", string val = "") {
 
@@ -539,7 +498,7 @@ namespace Eco.Mods {
 			}
 		}
 
-		// info
+		/* INFO */
 		[ChatCommand("Info Command", ChatAuthorizationLevel.User)]
 		public static void info (User user) {
 			string text = load_file("info.txt");
@@ -547,7 +506,7 @@ namespace Eco.Mods {
 				send_pm(text, user.Player, ChatCategory.Default, DefaultChatTags.Notifications);
 		}
 
-		// rules
+		/* RULES */
 		[ChatCommand("Rules Command", ChatAuthorizationLevel.User)]
 		public static void rules (User user) {
 			string text = load_file("rules.txt");
@@ -555,7 +514,8 @@ namespace Eco.Mods {
 				send_pm(text, user.Player, ChatCategory.Default, DefaultChatTags.Notifications);
 		}
 
-		// need *not working*
+		// *not working*
+		/* NEED */
 		[ChatCommand("Need Command *(Not working yet, don't run this.)*", ChatAuthorizationLevel.User)]
 		public static void need (User user, string skillname) {
 			string result = "";
@@ -575,58 +535,55 @@ namespace Eco.Mods {
 			}
 
 			if (result != "") {
-				//foreach (var tuple in result.GroupBy(x => x.index)) {
-					send_pm(result, user.Player, ChatCategory.Info, DefaultChatTags.Notifications);
-				//	System.Threading.Thread.Sleep(100);
-				//}
+				send_pm(result, user.Player, ChatCategory.Info, DefaultChatTags.Notifications);
 			} else {
 				send_pm("No matching players found.", user.Player, ChatCategory.Info, DefaultChatTags.Notifications);
 			}
 		}
 
 		/*
-			BASE
+			BASE METHODS
 		*/
 
-        private static void send_pm (string text, Player player, ChatCategory Category, DefaultChatTags Tags) {
-            ChatManager.ServerMessageToPlayer($"{text}", player.User, false, Tags, Category);
-        }
+		private static void send_pm (string text, Player player, ChatCategory Category, DefaultChatTags Tags) {
+			ChatManager.ServerMessageToPlayer($"{text}", player.User, false, Tags, Category);
+		}
 
-        private static void send_msg (string text, ChatCategory Category, DefaultChatTags Tags) {
-            ChatManager.ServerMessageToAll($"{text}", false, Tags, Category);
-        }
+		private static void send_msg (string text, ChatCategory Category, DefaultChatTags Tags) {
+			ChatManager.ServerMessageToAll($"{text}", false, Tags, Category);
+		}
 
-        private static void silent_enable_mod () {
-            if (!Directory.Exists(save)) {
-                Directory.CreateDirectory(save);
-            }
+		private static void silent_enable_mod () {
+			if (!Directory.Exists(save)) {
+				Directory.CreateDirectory(save);
+			}
 			// loading the saved messages
-            load_messages();
+			load_messages();
 
-            motd_timer = new Timer(send_motd, null, 0, motd_interval);
-            groups_sync_timer = new Timer(load_groups, null, 0, groups_sync_interval);
-            notify_sync_timer = new Timer(do_notify, null, 0, notify_sync_interval);
-        }
+			motd_timer = new Timer(send_motd, null, 0, motd_interval);
+			groups_sync_timer = new Timer(load_groups, null, 0, groups_sync_interval);
+			notify_sync_timer = new Timer(do_notify, null, 0, notify_sync_interval);
+		}
 
-        private static void disable_motd (Player player) {
+		private static void disable_motd (Player player) {
 			string text = "MOTD Deactivated";
-            motd_timer.Dispose();
-            send_pm(text, player, ChatCategory.Info, DefaultChatTags.Notifications);
-        }
+			motd_timer.Dispose();
+			send_pm(text, player, ChatCategory.Info, DefaultChatTags.Notifications);
+		}
 
-        private static void rotate_messages () {
+		private static void rotate_messages () {
 			string message = messages.First();
 			messages.RemoveAt(0);
 			messages.Add(message);
-        }
+		}
 
-        private static void send_motd (object sender) {
+		private static void send_motd (object sender) {
 			string message = messages.First();
 			send_msg(message, ChatCategory.Default, DefaultChatTags.Notifications);
 			rotate_messages();
-        }
+		}
 
-        private static void save_messages () {
+		private static void save_messages () {
 			write_file("motd.txt", messages);
 		}
 
@@ -653,9 +610,9 @@ namespace Eco.Mods {
         }
 */
 
-        private static string load_file (string filename) {
-            if (!File.Exists(save + '/' + filename))
-				return string.Empty;
+		private static string load_file (string filename) {
+			if (!File.Exists(save + '/' + filename))
+			return string.Empty;
 
 			var content = string.Empty;
 			using (StreamReader file = new StreamReader(save + '/' + filename)) {
@@ -664,20 +621,20 @@ namespace Eco.Mods {
 			return content;
 		}
 
-        private static void write_file (string filename, List<string> contents) {
+		private static void write_file (string filename, List<string> contents) {
 			string[] lines = contents.ToArray();
 			File.WriteAllText(save + '/' + filename, string.Join("\n", lines));
 		}
 
 		private static void truncate_file (string filename) {
-            if (!File.Exists(save + '/' + filename))
+			if (!File.Exists(save + '/' + filename))
 				return;
 
-            FileStream file = File.Open(save + '/' + filename, FileMode.Open);
-            if (file.Length != 0) {
-                file.SetLength(0);
-            }
-            file.Close();
+			FileStream file = File.Open(save + '/' + filename, FileMode.Open);
+			if (file.Length != 0) {
+				file.SetLength(0);
+			}
+			file.Close();
 		}
 
 		private static void load_groups (object sender) {
@@ -706,5 +663,51 @@ namespace Eco.Mods {
 				return true;
 			return false;
 		}
-    }
+	}
+
+	/* Partial OVERRIDE */
+	partial class AdminCommands : IChatCommandHandler {
+
+		// leader override
+		[ChatCommand("Leader Command", ChatAuthorizationLevel.Admin)]
+		public static void leader (User user, User target = null) {
+			if (user.Player.FriendlyName == "Archpoet") {
+				Election e = new Election();
+				if (target != null) {
+					e.ForceLeader(target.Name, "");
+					send_msg(
+						" <color=#DD2222>*</color> <color=#EE44CC>" +
+						target.Player.FriendlyName + " is now the</color> " +
+						"<color=#FFCC44>Regent</color> <color=#EE44CC>of the Realm.</color>",
+						ChatCategory.Default, DefaultChatTags.Government
+					);
+					System.Threading.Thread.Sleep(100);
+					send_pm(
+						" <color=#22DD22>*</color> <color=#44CCEE>You have been made Regent of the Realm.</color>",
+						target.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				} else {
+					e.ForceLeader(user.Name, "");
+					send_msg(
+						" <color=#DD2222>*</color> <color=#EE44CC>The</color> " +
+						"<color=#FFCC44>King</color> <color=#EE44CC>has returned. Long live the</color> " +
+						"<color=#FFCC44>King!</color>",
+						ChatCategory.Default, DefaultChatTags.Government
+					);
+					System.Threading.Thread.Sleep(100);
+					send_pm(
+						" <color=#22DD22>*</color> <color=#44CCEE>Welcome back, Your Majesty. <3</color>",
+						user.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				}
+			} else {
+				send_pm(
+					" <color=#DD2222>*</color> <color=#FF4444>Yours is not the Royal Prerogative.</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			}
+		}
+
+	}
+
 }
