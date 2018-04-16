@@ -33,16 +33,60 @@ namespace Eco.Mods {
 	using Eco.Shared.View;
 	using Eco.World;
 
+	partial class AdminCommands : IChatCommandHandler {
+
+		// leader override
+		[ChatCommand("Leader Command", ChatAuthorizationLevel.Admin)]
+		public static void leader (User user, User target = null) {
+			if (user.Player.FriendlyName == "Archpoet") {
+				Election e = new Election();
+				if (target != null) {
+					e.ForceLeader(target.Name, "");
+					send_msg(
+						" <color=#DD2222>*</color> <color=#EE44CC>" +
+						target.Player.FriendlyName + " is now the</color> " +
+						"<color=#FFCC44>Regent</color> <color=#EE44CC>of the Realm.</color>",
+						ChatCategory.Default, DefaultChatTags.Government
+					);
+					System.Threading.Thread.Sleep(100);
+					send_pm(
+						" <color=#22DD22>*</color> <color=#44CCEE>You have been made Regent of the Realm.</color>",
+						target.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				} else {
+					e.ForceLeader(user.Name, "");
+					send_msg(
+						" <color=#DD2222>*</color> <color=#EE44CC>The</color> " +
+						"<color=#FFCC44>King</color> <color=#EE44CC>has returned. Long live the</color> " +
+						"<color=#FFCC44>King!</color>",
+						ChatCategory.Default, DefaultChatTags.Government
+					);
+					System.Threading.Thread.Sleep(100);
+					send_pm(
+						" <color=#22DD22>*</color> <color=#44CCEE>Welcome back, Your Majesty. <3</color>",
+						user.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				}
+			} else {
+				send_pm(
+					" <color=#DD2222>*</color> <color=#FF4444>Yours is not the Royal Prerogative.</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			}
+		}
+
+	}
+
 	public class ArchModCommands : IChatCommandHandler /*, IInitializablePlugin */ {
 		//
 		public static int groups_sync_interval = (150) * 1000; // 2.5 mins
+		public static Timer groups_sync_timer;
 		public static int notify_sync_interval = (10) * 1000; // 10 secs
+		public static Timer notify_sync_timer;
 
 		// Motd
 		public static int motd_interval = (2700) * 1000; // 45 mins
 		public static Timer motd_timer;
-		public static Timer groups_sync_timer;
-		public static Timer notify_sync_timer;
 		public static List <string> messages = new List<string>();
 
 		// Motion
@@ -67,7 +111,7 @@ namespace Eco.Mods {
 			silent_enable_mod();
 		}
 
-		// TODO: casino?
+		// TODO: Currency->SP Exchange, Casino?
 
 		// Commands
 
@@ -387,7 +431,6 @@ namespace Eco.Mods {
 			} else {
 				astr.GetAccount(target.Name).Val += val;
 				astr.GetAccount(" _Treasury").Val -= val;
-				//astr.CreditAccount(target.Name, val);
 				send_msg(
 					"<color=#44FF44>NOTICE: " + target.Player.FriendlyName + " has been allocated " +
 					val + " " + currency + ". Reason: " + reason + ".</color>",
@@ -409,7 +452,6 @@ namespace Eco.Mods {
 			} else {
 				astr.GetAccount(user.Name).Val -= val;
 				astr.GetAccount(" _Treasury").Val += val;
-				//astr.CreditAccount(target.Name, val);
 				send_msg(
 					"<color=#44FF44>NOTICE: " + user.Player.FriendlyName + " donated " +
 					val + " Astrum to the Crown. Reason: " + reason + "</color>",
@@ -513,46 +555,6 @@ namespace Eco.Mods {
 				send_pm(text, user.Player, ChatCategory.Default, DefaultChatTags.Notifications);
 		}
 
-		// leader override
-		[ChatCommand("Leader Command", ChatAuthorizationLevel.Admin)]
-		public static override void leader (User user, User target = null) {
-			if (user.Player.FriendlyName == "Archpoet") {
-				Election e = new Election();
-				if (target != null) {
-					e.ForceLeader(target.Name, "");
-					send_msg(
-						" <color=#DD2222>*</color> <color=#EE44CC>" +
-						target.Player.FriendlyName + " is now the</color> " +
-						"<color=#FFCC44>Regent</color> <color=#EE44CC>of the Realm.</color>",
-						ChatCategory.Default, DefaultChatTags.Government
-					);
-					System.Threading.Thread.Sleep(100);
-					send_pm(
-						" <color=#22DD22>*</color> <color=#44CCEE>You have been made Regent of the Realm.</color>",
-						target.Player, ChatCategory.Default, DefaultChatTags.Government
-					);
-				} else {
-					e.ForceLeader(user.Name, "");
-					send_msg(
-						" <color=#DD2222>*</color> <color=#EE44CC>The</color> " +
-						"<color=#FFCC44>King</color> <color=#EE44CC>has returned. Long live the</color> " +
-						"<color=#FFCC44>King!</color>",
-						ChatCategory.Default, DefaultChatTags.Government
-					);
-					System.Threading.Thread.Sleep(100);
-					send_pm(
-						" <color=#22DD22>*</color> <color=#44CCEE>Welcome back, Your Majesty. <3</color>",
-						user.Player, ChatCategory.Default, DefaultChatTags.Government
-					);
-				}
-			} else {
-				send_pm(
-					" <color=#DD2222>*</color> <color=#FF4444>Yours is not the Royal Prerogative.</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			}
-		}
-
 		// need *not working*
 		[ChatCommand("Need Command *(Not working yet, don't run this.)*", ChatAuthorizationLevel.User)]
 		public static void need (User user, string skillname) {
@@ -628,7 +630,7 @@ namespace Eco.Mods {
 			write_file("motd.txt", messages);
 		}
 
-		private static void load_messages (object sender) {
+		private static void load_messages () {
 			string content = load_file("motd.txt");
 			messages = content.Split('\n').ToList();
 		}
