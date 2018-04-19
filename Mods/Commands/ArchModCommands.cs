@@ -1,4 +1,4 @@
-﻿/*
+/*
     Title: ArchMod
     Desc: A Governance/Utility Eco Mod
     Author: Archpoet <@Archpoet#0047>
@@ -15,21 +15,30 @@ namespace Eco.Mods {
 	using System.Runtime.Serialization.Formatters.Binary;
 	using System.Text.RegularExpressions;
 
-	using Shared.Services;
-
 	using Eco.Core.Agents;
 	using Eco.Core.Plugins.Interfaces;
 	using Eco.Core.Serialization;
+    using Eco.Core.Utils;
+    using Eco.Core.Utils.AtomicAction;
 	using Eco.Gameplay;
 	using Eco.Gameplay.Components;
+    using Eco.Gameplay.DynamicValues;
 	using Eco.Gameplay.Economy;
 	using Eco.Gameplay.Items;
 	using Eco.Gameplay.Players;
+    using Eco.Gameplay.Property;
 	using Eco.Gameplay.Skills;
 	using Eco.Gameplay.Systems;
 	using Eco.Gameplay.Systems.Chat;
+	using Eco.Gameplay.Systems.Tooltip;
+	using Eco.Gameplay.Systems.TextLinks;
+	using Eco.Mods.TechTree;
+    using Eco.Shared.Localization;
 	using Eco.Shared.Math;
 	using Eco.Shared.Networking;
+    using Eco.Shared.Serialization;
+    using Eco.Shared.Services;
+    using Eco.Shared.Utils;
 	using Eco.Shared.View;
 	using Eco.World;
 
@@ -44,6 +53,11 @@ namespace Eco.Mods {
 		public static int motd_interval = (2700) * 1000; // 45 mins
 		public static Timer motd_timer;
 		public static List <string> messages = new List<string>();
+
+		// Mint
+		public static float mint_pool = 50000f;
+		public static int mint_max_per_day = 5;
+		public static Dictionary <string,DateTime> minting = new Dictionary <string,DateTime> ();
 
 		// Motion
 		public static bool is_motion_active;
@@ -73,6 +87,90 @@ namespace Eco.Mods {
 		/*
 			COMMANDS
 		*/
+
+		/* MINT */
+		[ChatCommand("Mint Command", ChatAuthorizationLevel.User)]
+		public static void mint (User user, string param = "", string arg = "") {
+			Currency astr = EconomyManager.Currency.GetCurrency("Astrum");
+
+			if (minting.ContainsKey(user.Name)) {
+				DateTime last = minting[user.Name];
+				DateTime now = new DateTime();
+
+				TimeSpan t = last - now;
+
+				if (t.TotalHours < 24) {
+					send_pm(
+						"<color=#FF4444>ERROR: You may only access the Mint Pool once per day.</color>",
+						user.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+
+					return;
+				}
+			} 
+
+			ItemStack itemStack = user.Inventory.NonEmptyStacks.Where(
+				stack => stack.Item.FriendlyName == "Gold Ore"
+			).FirstOrDefault();
+
+			if (itemStack != null) {
+				int items = 0;
+				for (var i = 0; i < mint_max_per_day; i++) {
+					bool worked = user.Inventory.TryRemoveItem<GoldOreItem>(user);
+					if (! worked) {
+						// failed
+						break;
+					}
+					items++;
+				}
+
+				float amount = (float) items;
+				float val = amount * 10f;
+
+				// checks
+				if (items == 0) {
+					send_pm(
+						"<color=#FF4444>ERROR: You must mint something, get some GoldOre.</color>",
+						user.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				} else if (mint_pool < val) {
+					InventoryChangeSet changes = new InventoryChangeSet(user.Inventory, user);
+					changes.AddItems<GoldOreItem>(items);
+					send_pm(
+						"<color=#FF4444>ERROR: Mint Pool does not have enough " + astr.UILink() +
+						" to cover that, (PoolBalance:" + mint_pool + ").</color>",
+						user.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				} else if (astr.GetAccount(" _Treasury").Val < val) {
+					InventoryChangeSet changes = new InventoryChangeSet(user.Inventory, user);
+					changes.AddItems<GoldOreItem>(items);
+					send_pm(
+						"<color=#FF4444>ERROR: Treasury does not have enough " + astr.UILink() + " to cover that.</color>",
+						user.Player, ChatCategory.Default, DefaultChatTags.Government
+					);
+				} else {
+					// award
+					mint_pool -= val;
+					astr.GetAccount(" _Treasury").Val -= val;
+
+					minting[ user.Name ] = new DateTime();
+					astr.GetAccount(user.Name).Val += val;
+					send_msg(
+						"<color=#44FF44>NOTICE: " + user.Player.FriendlyName + " has converted " +
+						val + " " + astr.UILink() + " from the Mint pool, (PoolBalance:" + mint_pool + ").</color>",
+						ChatCategory.Default, DefaultChatTags.Government
+					);
+				}
+			} else {
+				// not enough
+				send_pm(
+					"<color=#FF4444>ERROR: You must mint <i>something</i>, go get some GoldOre.</color>",
+					user.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+				return;
+			}
+
+		}
 
 		/* MOTION */
 		[ChatCommand("Motion Command", ChatAuthorizationLevel.Admin)]
@@ -353,7 +451,7 @@ namespace Eco.Mods {
 			Currency astr = EconomyManager.Currency.GetCurrency(currency);
 			if (astr.GetAccount(" _Treasury").Val < val) {
 				send_pm(
-					"<color=#FF4444>ERROR: Treasury does not have enough " + currency + " to cover that.</color>",
+					"<color=#FF4444>ERROR: Treasury does not have enough " + astr.UILink() + " to cover that.</color>",
 					user.Player, ChatCategory.Default, DefaultChatTags.Government
 				);
 			} else {
@@ -361,7 +459,7 @@ namespace Eco.Mods {
 				astr.GetAccount(" _Treasury").Val -= val;
 				send_msg(
 					"<color=#44FF44>NOTICE: " + target.Player.FriendlyName + " has been allocated " +
-					val + " " + currency + ". Reason: " + reason + ".</color>",
+					val + " " + astr.UILink() + ". Reason: " + reason + ".</color>",
 					ChatCategory.Default, DefaultChatTags.Government
 				);
 			}
@@ -374,7 +472,7 @@ namespace Eco.Mods {
 			Currency astr = EconomyManager.Currency.GetCurrency("Astrum");
 			if (astr.GetAccount(user.Name).Val < val) {
 				send_pm(
-					"<color=#FF4444>ERROR: You do not have enough Astrum to cover that.</color>",
+					"<color=#FF4444>ERROR: You do not have enough " + astr.UILink() + " to cover that.</color>",
 					user.Player, ChatCategory.Default, DefaultChatTags.Government
 				);
 			} else {
@@ -382,7 +480,7 @@ namespace Eco.Mods {
 				astr.GetAccount(" _Treasury").Val += val;
 				send_msg(
 					"<color=#44FF44>NOTICE: " + user.Player.FriendlyName + " donated " +
-					val + " Astrum to the Crown. Reason: " + reason + "</color>",
+					val + " " + astr.UILink() + " to the Crown. Reason: " + reason + "</color>",
 					ChatCategory.Default, DefaultChatTags.Government
 				);
 				System.Threading.Thread.Sleep(100);
@@ -401,7 +499,7 @@ namespace Eco.Mods {
 			if (astr.GetAccount(target.Name).Val < val) {
 				send_pm(
 					"<color=#EE4444>ERROR: " + target.Player.FriendlyName +
-					" does not have enough Astrum to cover that.</color>",
+					" does not have enough " + astr.UILink() + " to cover that.</color>",
 					user.Player, ChatCategory.Default, DefaultChatTags.Government
 				);
 			} else {
@@ -410,7 +508,7 @@ namespace Eco.Mods {
 				send_msg(
 					"<color=#EE4444>NOTICE: " + target.Player.FriendlyName + " was " +
 					"</color><color=#FFCC44>fined</color><color=#44EE44> " +
-					val + " Astrum. Reason: " + reason + "</color>",
+					val + " " + astr.UILink() + ", Reason: " + reason + "</color>",
 					ChatCategory.Default, DefaultChatTags.Government
 				);
 			}
@@ -546,11 +644,13 @@ namespace Eco.Mods {
 		*/
 
 		private static void send_pm (string text, Player player, ChatCategory Category, DefaultChatTags Tags) {
-			ChatManager.ServerMessageToPlayer($"{text}", player.User, false, Tags, Category);
+			System.FormattableString s = $"{text}";
+			ChatManager.ServerMessageToPlayer(s, player.User, false, Tags, Category);
 		}
 
 		private static void send_msg (string text, ChatCategory Category, DefaultChatTags Tags) {
-			ChatManager.ServerMessageToAll($"{text}", false, Tags, Category);
+			System.FormattableString s = $"{text}";
+			ChatManager.ServerMessageToAll(s, false, Tags, Category);
 		}
 
 		private static void silent_enable_mod () {
@@ -593,17 +693,17 @@ namespace Eco.Mods {
 		}
 
 /*
-        private static void save_messages() {
+        private static void write_dict_file (string filename, ) {
             BinaryFormatter bf = new BinaryFormatter();
-            FileStream file = File.Create(save + "/SavedMessages.arc");
+            FileStream file = File.Create(save + '/' + filename);
             bf.Serialize(file, messages);
             file.Close();
         }
 
-        private static void load_messages() {
+        private static void read_dict_file (string filename) {
             if (File.Exists(save + "/SavedMessages.arc")) {
                 BinaryFormatter bf = new BinaryFormatter();
-                FileStream file = File.Open(save + "/SavedMessages.arc", FileMode.Open);
+                FileStream file = File.Open(save + '/' + filename, FileMode.Open);
                 messages = (List<string>) bf.Deserialize(file);
                 file.Close();
             }
@@ -706,6 +806,16 @@ namespace Eco.Mods {
 					user.Player, ChatCategory.Default, DefaultChatTags.Government
 				);
 			}
+		}
+
+		private static void send_pm (string text, Player player, ChatCategory Category, DefaultChatTags Tags) {
+			System.FormattableString s = $"{text}";
+			ChatManager.ServerMessageToPlayer(s, player.User, false, Tags, Category);
+		}
+
+		private static void send_msg (string text, ChatCategory Category, DefaultChatTags Tags) {
+			System.FormattableString s = $"{text}";
+			ChatManager.ServerMessageToAll(s, false, Tags, Category);
 		}
 
 	}

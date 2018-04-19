@@ -20,7 +20,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.0,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -137,7 +137,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.4,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -227,7 +227,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Wheat",
           "DisplayName": "Wheat",
-          "MaturityAgeDays": 0.7,
+          "MaturityAgeDays": 0.8,
           "CalorieValue": 3.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.WheatItem, Eco.Mods"
@@ -838,7 +838,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Bunchgrass",
           "DisplayName": "Bunchgrass",
-          "MaturityAgeDays": 0.4,
+          "MaturityAgeDays": 0.5,
           "CalorieValue": 2.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.PlantFibersItem, Eco.Mods"
@@ -865,7 +865,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.5,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -955,7 +955,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Fern",
           "DisplayName": "Fern",
-          "MaturityAgeDays": 0.6,
+          "MaturityAgeDays": 0.7,
           "CalorieValue": 2.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.FiddleheadsItem, Eco.Mods"
@@ -982,7 +982,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.6,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -1072,7 +1072,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Huckleberry",
           "DisplayName": "Huckleberry",
-          "MaturityAgeDays": 0.8,
+          "MaturityAgeDays": 0.9,
           "CalorieValue": 4.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.HuckleberriesItem, Eco.Mods"
@@ -1182,7 +1182,7 @@
           "VoxelsPerEntry": 5,
           "Name": "CommonGrass",
           "DisplayName": "Grass",
-          "MaturityAgeDays": 0.5,
+          "MaturityAgeDays": 0.6,
           "CalorieValue": 0.8,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.PlantFibersItem, Eco.Mods"
@@ -1383,7 +1383,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.5,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -1473,7 +1473,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Beets",
           "DisplayName": "Beets",
-          "MaturityAgeDays": 0.8,
+          "MaturityAgeDays": 0.9,
           "CalorieValue": 4.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.BeetItem, Eco.Mods"
@@ -1500,7 +1500,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.5,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -1590,7 +1590,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Corn",
           "DisplayName": "Corn",
-          "MaturityAgeDays": 0.8,
+          "MaturityAgeDays": 0.9,
           "CalorieValue": 4.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.CornItem, Eco.Mods"
@@ -1617,7 +1617,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": true,
-          "SeedDropChance": 0.25,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -1727,7 +1727,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.25,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -1817,7 +1817,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Fireweed",
           "DisplayName": "Fireweed",
-          "MaturityAgeDays": 0.6,
+          "MaturityAgeDays": 0.7,
           "CalorieValue": 1.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.FireweedShootsItem, Eco.Mods"
@@ -1844,7 +1844,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.5,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -1934,7 +1934,7 @@
           "VoxelsPerEntry": 5,
           "Name": "CreosoteBush",
           "DisplayName": "Creosote Bush",
-          "MaturityAgeDays": 0.6,
+          "MaturityAgeDays": 0.7,
           "CalorieValue": 1.0,
           "ResourceItem": {},
           "ResourceRange": {
@@ -1959,7 +1959,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.25,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -2049,7 +2049,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Sagebrush",
           "DisplayName": "Sagebrush",
-          "MaturityAgeDays": 0.6,
+          "MaturityAgeDays": 0.7,
           "CalorieValue": 2.5,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.PlantFibersItem, Eco.Mods"
@@ -2076,7 +2076,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.5,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -2166,7 +2166,7 @@
           "VoxelsPerEntry": 5,
           "Name": "PricklyPear",
           "DisplayName": "Prickly Pear",
-          "MaturityAgeDays": 0.7,
+          "MaturityAgeDays": 0.8,
           "CalorieValue": 1.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.PricklyPearFruitItem, Eco.Mods"
@@ -2193,7 +2193,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.75,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -2283,7 +2283,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Beans",
           "DisplayName": "Beans",
-          "MaturityAgeDays": 0.8,
+          "MaturityAgeDays": 0.9,
           "CalorieValue": 4.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.BeansItem, Eco.Mods"
@@ -2310,7 +2310,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.25,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -2394,7 +2394,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Bullrush",
           "DisplayName": "Bullrush",
-          "MaturityAgeDays": 0.3,
+          "MaturityAgeDays": 0.4,
           "CalorieValue": 1.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.PlantFibersItem, Eco.Mods"
@@ -2979,7 +2979,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": true,
-          "SeedDropChance": 0.25,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -3419,7 +3419,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.6,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -3509,7 +3509,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Tomatoes",
           "DisplayName": "Tomatoes",
-          "MaturityAgeDays": 0.8,
+          "MaturityAgeDays": 0.9,
           "CalorieValue": 3.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.TomatoItem, Eco.Mods"
@@ -3536,7 +3536,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.66,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -3614,7 +3614,7 @@
           "VoxelsPerEntry": 5,
           "Name": "AmanitaMushroom",
           "DisplayName": "Amanita Mushroom",
-          "MaturityAgeDays": 0.7,
+          "MaturityAgeDays": 0.8,
           "CalorieValue": 1.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.AmanitaMushroomsItem, Eco.Mods"
@@ -3641,7 +3641,7 @@
             "Type": "Eco.Gameplay.Plants.PlantEntity, Eco.Gameplay"
           },
           "Water": false,
-          "SeedDropChance": 0.66,
+          "SeedDropChance": 0.05,
           "SeedsAtGrowth": 0.6,
           "SeedsBonusAtGrowth": 0.9,
           "SeedRange": {
@@ -3719,7 +3719,7 @@
           "VoxelsPerEntry": 5,
           "Name": "CriminiMushroom",
           "DisplayName": "Crimini Mushroom",
-          "MaturityAgeDays": 0.7,
+          "MaturityAgeDays": 0.8,
           "CalorieValue": 1.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.CriminiMushroomsItem, Eco.Mods"
@@ -4362,7 +4362,7 @@
           "VoxelsPerEntry": 5,
           "Name": "Rice",
           "DisplayName": "Rice",
-          "MaturityAgeDays": 0.8,
+          "MaturityAgeDays": 0.9,
           "CalorieValue": 2.0,
           "ResourceItem": {
             "Type": "Eco.Mods.TechTree.RiceItem, Eco.Mods"

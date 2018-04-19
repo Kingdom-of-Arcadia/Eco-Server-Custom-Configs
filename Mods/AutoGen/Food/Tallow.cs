@@ -17,7 +17,7 @@ namespace Eco.Mods.TechTree
     
     [Serialized]
     [Weight(20)]                                          
-    [Fuel(2000)]                                              
+    [Fuel(20000)]          
     public partial class TallowItem :
         FoodItem            
     {
