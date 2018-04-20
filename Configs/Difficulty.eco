@@ -3,7 +3,7 @@
   "CollaborationPreset": "HighCollaboration",
   "UnlearnRefundRate": 0.05,
   "SpecialtyCostMultiplier": 2.0,
-  "SkillGainMultiplier": 0.5,
+  "SkillGainMultiplier": 0.4,
   "SkillPointsPerAction": 0.0,
   "SkillPointPerCrafttime": 0.0
 }
