@@ -1,6 +1,6 @@
 {
-  "EnableStatWrites": true,
-  "EnableStatReads": true,
+  "EnableStatWrites": false,
+  "EnableStatReads": false,
   "WriteTimeoutMS": 5000,
   "ReadTimeoutMS": 5000
 }

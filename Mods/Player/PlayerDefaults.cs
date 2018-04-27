@@ -17,6 +17,10 @@ public static class PlayerDefaults
     {        
         return new Dictionary<Type, int>
         {
+            { typeof(ArcadiaManualItem), 1 },
+            { typeof(CharredMeatItem), 10 },
+            { typeof(CharredCornItem), 10 },
+            { typeof(CharredTomatoItem), 10 }
         };
     }
 

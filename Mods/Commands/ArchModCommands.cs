@@ -25,6 +25,7 @@ namespace Eco.Mods {
 	using Eco.Gameplay.DynamicValues;
 	using Eco.Gameplay.Economy;
 	using Eco.Gameplay.Items;
+	using Eco.Gameplay.Interactions;
 	using Eco.Gameplay.Players;
 	using Eco.Gameplay.Property;
 	using Eco.Gameplay.Skills;
@@ -42,9 +43,72 @@ namespace Eco.Mods {
 	using Eco.Shared.View;
 	using Eco.World;
 
+	// can we override the Eat() method?
+	public partial class StomachInstance : Eco.Gameplay.Players.Player.Stomach {
+
+		public override bool Eat (User user, FoodItem food) {
+			Timer foodTimer = new Timer();
+
+			if (food.GetType().GetMethod("GetFlatStats") != null) {
+				Timer foodTimer = new Timer(disableStats(food), null, 0, (300 * 1000));
+			}
+
+			base.Eat(user, food);
+		}
+	}
+
+	//
+	public enum Suit {
+		Hearts,
+		Diamonds,
+		Clubs,
+		Spades
+	}
+
+	public class Deck {
+		public List<Card> Cards { get; set; }
+		public List<Card> Shuffled { get; set; }
+
+		public Deck() {
+			Cards = new List<Card>();
+
+			foreach (Suit suit in Enum.GetValues(typeof(Suit))) {
+				for (int y = 2; y < 11; y++) {
+					Cards.Add(new Card(suit, y.ToString()));
+				}
+				Cards.Add(new Card(suit, "A"));
+				Cards.Add(new Card(suit, "J"));
+				Cards.Add(new Card(suit, "Q"));
+				Cards.Add(new Card(suit, "K"));
+			}
+		}
+
+		public void shuffle () {
+			Shuffled = new List<Card>();
+			Random r = new Random();
+			int p = 0;
+			while (this.Cards.Count > 0) {
+				p = r.Next(0, this.Cards.Count);
+				Shuffled.Add(Cards[p]);
+				this.Cards.Remove(Cards[p]);
+			}
+			this.Cards = Shuffled;
+		}
+	}
+
+	public class Card {
+		Suit suit { get; set; }
+		string value { get; set; }
+		public Card(Suit s, string v) {
+			suit = s;
+			value = v;
+		}
+	}
+
 	public class ArchModCommands : IChatCommandHandler /*, IInitializablePlugin */ {
 		// Config
 		public static Dictionary <string,int> config = new Dictionary <string,int> ();
+		public static Dictionary <string,int> data = new Dictionary <string,int> ();
 
 		// Sync
 		public static int groups_sync_interval = (150) * 1000; // 2.5 mins
@@ -61,9 +125,11 @@ namespace Eco.Mods {
 		public static int mint_max_per_day = 1500;
 		public static int minted_today = 0;
 		public static int mint_daily = 5;
-		public static int mint_pool = 0;
 
 		public static Dictionary <string,DateTime> minting = new Dictionary <string,DateTime> ();
+
+		// Casino
+		public static Deck deck = new Deck();
 
 		// Motion
 		public static bool is_motion_active;
@@ -86,9 +152,7 @@ namespace Eco.Mods {
 		// Class Constructor
 		static ArchModCommands() {
 			/**/
-			config[ "mint_pool" ] = mint_pool;
 			config[ "mint_daily" ] = mint_daily;
-			config[ "minted_today" ] = minted_today;
 			config[ "mint_max_per_day" ] = mint_max_per_day;
 			/**/
 
@@ -102,6 +166,7 @@ namespace Eco.Mods {
 		*/
 
 		/* CONTRACT */
+		/*
 		[ChatCommand("Contract Command", ChatAuthorizationLevel.Admin)]
 		public static void contract (User user, string param = "", string val = "") {
 
@@ -115,14 +180,13 @@ namespace Eco.Mods {
 				break;
 			}
 		}
+		*/
 
 		/* MINT */
 		[ChatCommand("Mint: /mint", ChatAuthorizationLevel.User)]
 		public static void mint (User user, string action = "", string param = "", string arg = "") {
 			/*
-				config[ "mint_pool" ] = mint_pool;
 				config[ "mint_daily" ] = mint_daily;
-				config[ "minted_today" ] = minted_today;
 				config[ "mint_max_per_day" ] = mint_max_per_day;
 			*/
 
@@ -131,20 +195,52 @@ namespace Eco.Mods {
 			switch (action) {
 
 				case "status":
-					string status = "<b>Mint Status Report</b>";
-					status += "<br> <color=#44FF44>*</color> <i>Treasury Balance:</i> &" +
-						(int) astr.GetAccount(" _Treasury").Val;
-					status += "<br> <color=#44FF44>*</color> <i>Mint Pool:</i> - &" +
-						config["mint_pool"];
-					status += "<br> <color=#44FF44>*</color> <i>Net Gov. Funding:</i> " +
-						(int) (astr.GetAccount(" _Treasury").Val - (float) config["mint_pool"]);
+					string white = "#FFFFFF";
+					string green = "#44FF44";
+					string yellow = "#FFFF44";
+					string orange = "#FFCC44";
+					string red = "#FF4444";
 
-					status += "<br><br> <color=#44FF44>*</color> <i>Max Minted/Day:</i> &" +
-						config["mint_max_per_day"];
-					status += "<br> <color=#44FF44>*</color> <i>Minted Today:</i> - &" +
-						config["minted_today"];
-					status += "<br> <color=#44FF44>*</color> <i>Available " + astr.UILink() + " Today:</i> " +
-						(config["mint_max_per_day"] - config["minted_today"]);
+					string status = "<b>Mint Status Report</b>";
+					status += "<br> <color=#44FF44>*</color> <i>Mint Pool:</i>  <b>";
+
+					if ((int) astr.GetAccount(" _MintPool").Val >= 8000) {
+						status += "<color=" + green + ">" + (int) astr.GetAccount(" _MintPool").Val + "</color></b>";
+					} else if ((int) astr.GetAccount(" _MintPool").Val >= 4000) {
+						status += "<color=" + yellow + ">" + (int) astr.GetAccount(" _MintPool").Val + "</color></b>";
+					} else if ((int) astr.GetAccount(" _MintPool").Val >= 2000) {
+						status += "<color=" + orange + ">" + (int) astr.GetAccount(" _MintPool").Val + "</color></b>";
+					} else {
+						status += "<color=" + red + ">" + (int) astr.GetAccount(" _MintPool").Val + "</color></b>";
+					}
+
+					status += "<br> <color=#44FF44>*</color> <i>Treasury Balance:</i>  <b>";
+					if ((int) astr.GetAccount(" _Treasury").Val >= 1500) {
+						status += "<color=" + green + ">" + (int) astr.GetAccount(" _Treasury").Val + "</color></b>";
+					} else if ((int) astr.GetAccount(" _Treasury").Val >= 1000) {
+						status += "<color=" + yellow + ">" + (int) astr.GetAccount(" _Treasury").Val + "</color></b>";
+					} else if ((int) astr.GetAccount(" _Treasury").Val >= 500) {
+						status += "<color=" + orange + ">" + (int) astr.GetAccount(" _Treasury").Val + "</color></b>";
+					} else {
+						status += "<color=" + red + ">" + (int) astr.GetAccount(" _Treasury").Val + "</color></b>";
+					}
+
+					status += "<br><br> <color=#44FF44>*</color> <i>Max Minted/Day:</i>  <b>";
+					status += "<color=" + white + ">" + config["mint_max_per_day"] + "</color></b>";
+					status += "<br> <color=#44FF44>*</color> <i>Minted Today:</i>  - <b>";
+					status += "<color=" + white + ">" + minted_today + "</color></b>";
+
+					status += "<br> <color=#44FF44>*</color> <i>Available " + astr.UILink() + " Today:</i>  <b>";
+
+					if ( (config["mint_max_per_day"] - minted_today) >= (config["mint_max_per_day"] * 0.75) ) {
+						status += "<color=" + green + ">" + (config["mint_max_per_day"] - minted_today) + "</color></b>";
+					} else if ( (config["mint_max_per_day"] - minted_today) >= (config["mint_max_per_day"] * 0.5) ) {
+						status += "<color=" + yellow + ">" + (config["mint_max_per_day"] - minted_today) + "</color></b>";
+					} else if ( (config["mint_max_per_day"] - minted_today) >= (config["mint_max_per_day"] * 0.25) ) {
+						status += "<color=" + orange + ">" + (config["mint_max_per_day"] - minted_today) + "</color></b>";
+					} else {
+						status += "<color=" + red + ">" + minted_today + "</color></b>";
+					}
 
 					send_pm(status, user.Player, ChatCategory.Default, DefaultChatTags.Government);
 				break;
@@ -152,10 +248,50 @@ namespace Eco.Mods {
 				case "init":
 					if (UserManager.IsAdmin(user)) {
 						if (param != "") {
-							config[ "mint_pool" ] = int.Parse(param);
+							if (astr.GetAccount(" _MintPool").Val == 0) {
+
+								astr.GetAccount(" _MintPool").Val += int.Parse(param);
+								astr.GetAccount(user.Name).Val -= int.Parse(param);
+
+								send_msg(
+									"<color=#88FF44>NOTICE:</color> " +
+									"<color=#AAFF44>" + arg + "</color> <color=#44FF44>" + astr.UILink() + " " +
+									"added to the mint pool, <color=#AAFF44>(PoolBalance: " +
+									astr.GetAccount(" _MintPool").Val + ").</color>",
+									ChatCategory.Default, DefaultChatTags.Government
+								);
+
+								// save config
+								save_config();
+							} else {
+								send_pm(
+									"<color=#FF6666>ERROR:</color> " +
+									"<color=#FF4444>The mint pool has a non-zero balance, " +
+									"you most likely meant to do <color=#FF6666>/mint add, [number]</color>",
+									user.Player, ChatCategory.Default, DefaultChatTags.Government
+								);
+							}
+						} else {
+							send_pm(
+								"<color=#FF6666>ERROR:</color> " +
+								"<color=#FF4444>You must initialize the mint pool with an integer value.</color>",
+								user.Player, ChatCategory.Default, DefaultChatTags.Government
+							);
+						}
+					}
+				break;
+
+				case "add":
+					if (UserManager.IsAdmin(user)) {
+						if (param != "") {
+							astr.GetAccount(" _MintPool").Val += int.Parse(param);
+							astr.GetAccount(user.Name).Val -= int.Parse(param);
+
 							send_msg(
 								"<color=#88FF44>NOTICE:</color> " +
-								"<color=#44FF44>Mint pool initialized to " + config["mint_pool"] + ".</color>",
+								"<color=#AAFF44>" + arg + "</color> <color=#44FF44>" + astr.UILink() + " " +
+								"added to the mint pool. <color=#AAFF44>New balance: " +
+								astr.GetAccount(" _MintPool").Val + "</color>",
 								ChatCategory.Default, DefaultChatTags.Government
 							);
 
@@ -188,27 +324,35 @@ namespace Eco.Mods {
 
 				default:
 					// load config
-					// load_config();
+					//load_config();
 
 					if (minting.ContainsKey(user.Name)) {
-						DateTime last = minting[user.Name];
-						DateTime now = new DateTime();
+						//DateTime last = minting[user.Name];
+						//DateTime now = new DateTime();
 
-						TimeSpan t = last - now;
-						int delta = (24 - (int)t.TotalHours);
+						//TimeSpan t = last - now;
+						//int delta = (24 - (int) t.TotalHours);
 
-						if (t.TotalHours < 24) {
+						//if (delta > 0) {
+							/*
 							send_pm(
-								"<color=#FF4444>ERROR: You may only access the mint pool once per day, " +
-								" and must wait an additional " + delta + " hour(s).</color>",
+								"<color=#FF4444>ERROR: You may only access the mint pool once per 24 hours.<br>" +
+								"more hours to <i>/mint</i> again.</color>",
+								" more hours to <i>/mint</i> again.</color>",
 								user.Player, ChatCategory.Default, DefaultChatTags.Government
 							);
-
+							*/
+							send_pm(
+								"<color=#FF4444>ERROR: You may only access the mint pool once per 24 hours.<br>" +
+								"You must wait until the daily server restart at 12:00 PST/PDT (approx.), " +
+								" before you can <i>/mint</i> again.</color>",
+								user.Player, ChatCategory.Default, DefaultChatTags.Government
+							);
 							return;
-						}
+						//}
 					}
 
-					if (config["minted_today"] >= config["mint_max_per_day"]) {
+					if (minted_today >= config["mint_max_per_day"]) {
 						send_pm(
 							"<color=#FF4444>ERROR: Mint max-per-day has been reached, please try again tomorrow.</color>",
 							user.Player, ChatCategory.Default, DefaultChatTags.Government
@@ -241,27 +385,18 @@ namespace Eco.Mods {
 								"<color=#FF4444>ERROR: You must mint something, get some GoldOre.</color>",
 								user.Player, ChatCategory.Default, DefaultChatTags.Government
 							);
-						} else if ((float) config["mint_pool"] < val) {
+						} else if (astr.GetAccount(" _MintPool").Val < val) {
 							refund = true;
 							send_pm(
-								"<color=#FF4444>ERROR: Mint pool does not have enough " + astr.UILink() +
-								" to cover that, (PoolBalance:" + config["mint_pool"] + ").</color>",
-								user.Player, ChatCategory.Default, DefaultChatTags.Government
-							);
-						} else if (astr.GetAccount(" _Treasury").Val < val) {
-							refund = true;
-							send_pm(
-								"<color=#FF4444>ERROR: Treasury does not have enough " +
-								astr.UILink() + " to cover that.</color>",
+								"<color=#FF4444>ERROR: The mint pool does not have enough " + astr.UILink() +
+								" to cover that, (PoolBalance:" + astr.GetAccount(" _MintPool").Val + ").</color>",
 								user.Player, ChatCategory.Default, DefaultChatTags.Government
 							);
 						} else {
 							// award
-							config["mint_pool"] -= (int) val;
-							config["minted_today"] += (int) val;
+							minted_today += (int) val;
 
-							astr.GetAccount(" _Treasury").Val -= val;
-							//astr.GetAccount(" _Treasury").Val -= val;
+							astr.GetAccount(" _MintPool").Val -= val;
 							astr.GetAccount(user.Name).Val += val;
 
 							minting[ user.Name ] = new DateTime();
@@ -270,7 +405,8 @@ namespace Eco.Mods {
 								"<color=#AAFF44>NOTICE:</color> " +
 								"<color=#44FF44>" + UserManager.UILink(user.Name) + " has converted " +
 								"<color=#AAFF44>" + val + "</color> <color=#44FF44>" + astr.UILink() +
-								" from the mint pool, (PoolBalance:" + config["mint_pool"] + ").</color>",
+								" from the mint pool, <color=#AAFF44>(PoolBalance:" +
+								astr.GetAccount(" _MintPool").Val + ").</color>",
 								ChatCategory.Default, DefaultChatTags.Government
 							);
 
@@ -769,6 +905,42 @@ namespace Eco.Mods {
 			}
 		}
 
+		// leader override
+		[ChatCommand("Regent Command", ChatAuthorizationLevel.Admin)]
+		public static void regent (User user, User target = null) {
+			Election e = new Election();
+			if (target == null) {
+				target = user;
+			}
+			e.ForceLeader(target.Name, "");
+
+			if (target.Player.FriendlyName != "Archpoet") {
+				send_msg(
+					" <color=#DD2222>*</color> <color=#EE44CC>" +
+					UserManager.UILink(target.Name) + " is now the</color> " +
+					"<color=#FFCC44>Regent</color> <color=#EE44CC>of the Realm.</color>",
+					ChatCategory.Default, DefaultChatTags.Government
+				);
+				System.Threading.Thread.Sleep(100);
+				send_pm(
+					" <color=#22DD22>*</color> <color=#44CCEE>You have been made Regent of the Realm.</color>",
+					target.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			} else {
+				send_msg(
+					" <color=#DD2222>*</color> <color=#EE44CC>The</color> " +
+					"<color=#FFCC44>King</color> <color=#EE44CC>has returned. Long live the</color> " +
+					"<color=#FFCC44>King!</color>",
+					ChatCategory.Default, DefaultChatTags.Government
+				);
+				System.Threading.Thread.Sleep(100);
+				send_pm(
+					" <color=#22DD22>*</color> <color=#44CCEE>Welcome back, Your Majesty. <3</color>",
+					target.Player, ChatCategory.Default, DefaultChatTags.Government
+				);
+			}
+		}
+
 		/*
 			BASE METHODS
 		*/
@@ -789,7 +961,7 @@ namespace Eco.Mods {
 			}
 
 			// load config
-			load_config();
+			// load_config();
 
 			// loading the saved MOTD messages
 			load_messages();
@@ -811,6 +983,12 @@ namespace Eco.Mods {
 			messages.Add(message);
 		}
 
+		private static void send_motd (object sender) {
+			string message = messages.First();
+			send_msg(message, ChatCategory.Default, DefaultChatTags.Notifications);
+			rotate_messages();
+		}
+
 		private static void send_motd (object sender, int number = 0) {
 			string message = messages.ElementAt(number);
 			send_msg(message, ChatCategory.Default, DefaultChatTags.Notifications);
@@ -828,8 +1006,8 @@ namespace Eco.Mods {
 		}
 
 		private static void load_config () {
-			read_bin_file("minting.bin", minting);
-			read_bin_file("config.bin", config);
+			minting = read_m_file("minting.bin");
+			config = read_c_file("config.bin");
 		}
 
 		private static void load_messages () {
@@ -838,7 +1016,7 @@ namespace Eco.Mods {
 		}
 
 		// Read(s)
-
+		/*
         private static void read_bin_file (string filename, List<string> output) {
             if (File.Exists(save + '/' + filename)) {
                 BinaryFormatter bf = new BinaryFormatter();
@@ -847,23 +1025,28 @@ namespace Eco.Mods {
                 file.Close();
             }
         }
+		*/
 
-        private static void read_bin_file (string filename, Dictionary<string,int> output) {
+		private static Dictionary<string,int> read_c_file (string filename) {
+			Dictionary<string,int> data = new Dictionary<string,int>();
+			if (File.Exists(save + '/' + filename)) {
+				BinaryFormatter bf = new BinaryFormatter();
+				FileStream file = File.Open(save + '/' + filename, FileMode.Open);
+				data = (Dictionary<string,int>) bf.Deserialize(file);
+				file.Close();
+			}
+			return data;
+		}
+
+        private static Dictionary<string,DateTime> read_m_file (string filename) {
+			Dictionary<string,DateTime> data = new Dictionary<string,DateTime>();
             if (File.Exists(save + '/' + filename)) {
                 BinaryFormatter bf = new BinaryFormatter();
                 FileStream file = File.Open(save + '/' + filename, FileMode.Open);
-                output = (Dictionary<string,int>) bf.Deserialize(file);
+                data = (Dictionary<string,DateTime>) bf.Deserialize(file);
                 file.Close();
             }
-        }
-
-        private static void read_bin_file (string filename, Dictionary<string,DateTime> output) {
-            if (File.Exists(save + '/' + filename)) {
-                BinaryFormatter bf = new BinaryFormatter();
-                FileStream file = File.Open(save + '/' + filename, FileMode.Open);
-                output = (Dictionary<string,DateTime>) bf.Deserialize(file);
-                file.Close();
-            }
+			return data;
         }
 
 		private static string read_txt_file (string filename) {
@@ -935,61 +1118,16 @@ namespace Eco.Mods {
 				return true;
 			return false;
 		}
-	}
 
-	/* Partial OVERRIDE */
-	partial class ArchModAdminCommands : AdminCommands {
-
-		// leader override
-		[ChatCommand("Leader Command", ChatAuthorizationLevel.Admin)]
-		public override void leader (User user, User target = null) {
-			if (user.Player.FriendlyName == "Archpoet") {
-				Election e = new Election();
-				if (target != null) {
-					e.ForceLeader(target.Name, "");
-					send_msg(
-						" <color=#DD2222>*</color> <color=#EE44CC>" +
-						UserManager.UILink(target.Name) + " is now the</color> " +
-						"<color=#FFCC44>Regent</color> <color=#EE44CC>of the Realm.</color>",
-						ChatCategory.Default, DefaultChatTags.Government
-					);
-					System.Threading.Thread.Sleep(100);
-					send_pm(
-						" <color=#22DD22>*</color> <color=#44CCEE>You have been made Regent of the Realm.</color>",
-						target.Player, ChatCategory.Default, DefaultChatTags.Government
-					);
-				} else {
-					e.ForceLeader(user.Name, "");
-					send_msg(
-						" <color=#DD2222>*</color> <color=#EE44CC>The</color> " +
-						"<color=#FFCC44>King</color> <color=#EE44CC>has returned. Long live the</color> " +
-						"<color=#FFCC44>King!</color>",
-						ChatCategory.Default, DefaultChatTags.Government
-					);
-					System.Threading.Thread.Sleep(100);
-					send_pm(
-						" <color=#22DD22>*</color> <color=#44CCEE>Welcome back, Your Majesty. <3</color>",
-						user.Player, ChatCategory.Default, DefaultChatTags.Government
-					);
-				}
-			} else {
-				send_pm(
-					" <color=#DD2222>*</color> <color=#FF4444>Yours is not the Royal Prerogative.</color>",
-					user.Player, ChatCategory.Default, DefaultChatTags.Government
-				);
-			}
+		//
+		private static void initialize_deck () {
+			deck = new Deck();
+			deck.shuffle();
 		}
-
-		private static void send_pm (string text, Player player, ChatCategory Category, DefaultChatTags Tags) {
-			System.FormattableString s = $"{text}";
-			ChatManager.ServerMessageToPlayer(s, player.User, false, Tags, Category);
+		private static void shuffle_deck () {
+			deck = new Deck();
+			deck.shuffle();
 		}
-
-		private static void send_msg (string text, ChatCategory Category, DefaultChatTags Tags) {
-			System.FormattableString s = $"{text}";
-			ChatManager.ServerMessageToAll(s, false, Tags, Category);
-		}
-
 	}
 
 }

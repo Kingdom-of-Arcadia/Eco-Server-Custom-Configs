@@ -1,3 +1,8 @@
+0.0.3
+-----
+* Added Coffee
+* Removed CandleStand SolidGround req
+
 0.0.2
 -----
 * Added /mint
